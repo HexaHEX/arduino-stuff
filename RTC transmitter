@@ -1,0 +1,80 @@
+#include <Wire.h>
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <LiquidCrystal_I2C.h>
+RF24 radio(7, 8);
+LiquidCrystal_I2C lcd(0x3F,16,2); 
+const byte rxAddr[6] = "00001";
+
+void setup()
+{
+ /* lcd.init();                     
+  lcd.backlight();// Включаем подсветку дисплея
+  lcd.print("iarduino.ru");
+  lcd.setCursor(4, 1);*/ 
+     
+  radio.begin();
+  radio.setChannel(5);
+  radio.setRetries(15, 15);
+  radio.openWritingPipe(rxAddr);
+  Serial.begin(9600);
+  radio.stopListening();
+}
+
+void loop()
+{ 
+//Первый элемент массива comand - номер команды
+//Второй и третий элементы массива comand - числа, показывающее скорость, расстояние и т.д. в зависимости от команды
+/*
+* comand[0] = 0 - движение, характеризуется скоростью и направлением движения(comand[1] == {0...100}, comand[2] == {0...3}(0 - вперед, 1 - вправо, 2 - назад, 3 - влево)) 
+* 
+*/
+  int comand[3];
+  int joyX = analogRead(A0);
+  int joyY = analogRead(A1);  
+  float pos = analogRead(A3);
+  pos = (int) (pos/1023 *220);
+  int velo = 180;
+   //Serial.print(joyX);
+  //Serial.print(' ');
+  //Serial.println(joyY);
+  Serial.println(velo);
+  
+  if(joyX > 483 && joyX < 487 && joyY > 334 && joyY < 338)
+  {
+    comand[0] = 0;
+    comand[1] = 0;
+    comand[2] = 0;
+    radio.write(&comand, sizeof(comand));
+  }
+  if(joyX > 483 && joyX < 487 && joyY <= 334)
+  {
+    comand[0] = 0;
+    comand[1] = 1;
+    comand[2] = 200;
+    radio.write(&comand, sizeof(comand));
+  }
+  if( joyX <= 483 && joyY > 334 && joyY < 338)
+  {
+    comand[0] = 0;
+    comand[1] = 2;
+    comand[2] = 200;
+    radio.write(&comand, sizeof(comand));
+  }
+  if(joyX > 483 && joyX < 487 && joyY >= 350 )
+  {
+    comand[0] = 0;
+    comand[1] = 3;
+    comand[2] = 200;
+    radio.write(&comand, sizeof(comand));
+  }
+  if(joyX >= 487 && joyY > 334 && joyY < 338)
+  {
+    comand[0] = 0;
+    comand[1] = 4;
+    comand[2] = 200;
+    radio.write(&comand, sizeof(comand));
+  }
+
+}
