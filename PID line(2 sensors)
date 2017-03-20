@@ -1,0 +1,122 @@
+#define lDirPin 7
+#define lSpeedPin 6
+#define rSpeedPin 5
+#define rDirPin 4
+#define lefteye A5
+#define righteye A4
+int v0 = 100;
+int u;
+int summ;
+int bp = 15;
+int time,timeprev=0;
+float p = 0.127f;
+float integral = 0.0015f;
+int min=-50;
+int max = 50;
+float d = 20.0f;
+int err = 0 ;
+int errprev = 0;
+int a[10];
+int t=1;
+void setup()
+{
+//1 sec 130;0.04;64
+	startMotors();
+Serial.begin(9600);
+	delay(5000);
+
+}
+
+void loop()
+{
+	int c=analogRead(A0);
+	timeprev = time;
+	int errprev = err;
+	int rightval = analogRead(righteye);
+	int leftval = analogRead(lefteye);
+	//Serial.print(leftval);
+	//Serial.print(" | ");
+// Serial.println(rightval);
+	err = rightval - leftval;
+for (int h=0;h<6;h+=1){
+		a[h]=err;
+	}
+	for (int h=0;h<6;h+=1){
+		summ=summ+a[h];
+	}
+	
+	if(summ > max){
+		max=summ;
+	}
+	if (summ < min){
+		min = summ;
+	}
+
+	u = p * err + d * (err - errprev)+integral *  summ;
+	int v1 = v0 + u;
+	int v2 = v0 - u;
+	
+//	if((err - errprev) > bp)
+//	{
+//		time = millis();
+//		a[t]=v1;
+//		b[t]=v2;
+//		t+=1;
+	//erial.println("!!!!!!!!!!!!!AAA")
+//	}
+   //go(v1, v2);
+
+	//if( time > timeprev)
+	  // {
+		//go(a[t],b[t]);
+		//t=t-1;
+		//if(t==0)
+		//{
+		//	t=1;
+		//}
+	//	go(120,90);
+	
+		if(c < 300){
+		
+		go(v1,v2);
+		}
+		else {
+		go((v1/2.5),(v2/2.5));
+		}
+
+	errprev = err;
+
+}
+
+void startMotors()
+{
+	pinMode(lDirPin, OUTPUT);
+	pinMode(lSpeedPin, OUTPUT);
+	pinMode(rDirPin, OUTPUT);
+	pinMode(rSpeedPin, OUTPUT);
+}
+
+
+void go(int lSpeed, int rSpeed)
+{
+	if (lSpeed < 0)
+	{
+		digitalWrite(lDirPin, LOW);
+	}
+	else
+	{
+		digitalWrite(lDirPin, HIGH);
+	}
+	if (rSpeed < 0)
+	{
+		digitalWrite(rDirPin, LOW);
+	}
+	else
+	{
+		digitalWrite(rDirPin, HIGH);
+	}
+	lSpeed = constrain(lSpeed, -255, 255);
+	rSpeed = constrain(rSpeed, -255, 255);
+	analogWrite(lSpeedPin, abs(lSpeed));
+	analogWrite(rSpeedPin, abs(rSpeed));
+}
