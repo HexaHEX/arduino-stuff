@@ -1,0 +1,113 @@
+#define lDirPin 4
+#define lSpeedPin 5
+#define rSpeedPin 6
+#define rDirPin 7
+#define N 8
+
+int V0 = 200;//4
+int U = 0;
+
+byte sensPin[N] = {9, 8, 5, 4, 3, 2, 1, 0};
+int sensVal[N];
+
+int maxVal[N] = {950, 930, 930, 930, 930, 930, 930, 950};
+int minVal[N] = {200,  40,  50,  200,  120, 150,  80,  450};
+
+
+float weight[N] = { -4.0f, -3.0f, -2.0f, -1.0f, 1.0f, 2.0f, 3.0f, 4.0f};
+float lightVal[N];
+
+float p = 80.0f;
+float d = 800.0f;
+float i = 0.0f;
+float Ex = 0.0f;
+float prevEx = 0.0f;
+float yPrev = 0.0f;
+
+int maxInt = 1000;
+int minInt = -1000;
+int integral = 0.002f;
+
+//#define DEBUG
+
+void setup() {
+  startMotors();
+  Serial.begin(9600);
+}
+
+void loop() {
+  readLine();
+#ifdef DEBUG
+  writeLine();
+  Serial.println("______________________________");
+  delay(1000);
+#endif
+  U = calcU();
+  go (V0 + U, V0 - U);
+
+}
+
+int calcU() {
+  int u = 0;
+  for (int i = 0; i < N; i++) {
+    lightVal[i] = float(sensVal[i] - minVal[i]) / float(maxVal[i] - minVal[i]);
+  }
+#ifdef DEBUG
+  for (int i = 0; i < N; i++) {
+    Serial.print(lightVal[i]);
+    Serial.print(" | ");
+  }
+  Serial.println();
+  delay(200);
+#endif
+  Ex = 0;
+  for (int i = 0; i < N; i++) {
+    Ex += lightVal[i] * weight[i];
+  }
+  integral += Ex;
+  integral = constrain(integral, minInt, maxInt);
+
+  u = p * Ex + d * (Ex - prevEx) + i * integral;
+
+  prevEx = Ex;
+  return u;
+}
+
+void startMotors() {
+  pinMode(lDirPin, OUTPUT);
+  pinMode(lSpeedPin, OUTPUT);
+  pinMode(rSpeedPin, OUTPUT);
+  pinMode(rDirPin, OUTPUT);
+}
+
+void go(int lSpeed, int rSpeed) {
+  if (lSpeed > 0) {
+    digitalWrite(lDirPin, HIGH);
+  } else {
+    digitalWrite(lDirPin, LOW);
+  }
+  if (rSpeed > 0) {
+    digitalWrite(rDirPin, HIGH);
+  } else {
+    digitalWrite(rDirPin, LOW);
+  }
+
+  analogWrite(lSpeedPin, abs(constrain(lSpeed, -255, 255)));
+  analogWrite(rSpeedPin, abs(constrain(rSpeed, -255, 255)));
+}
+
+
+void readLine() {
+  for (int i = 0; i < N; i++) {
+    sensVal[i] = analogRead(sensPin[i]);
+  }
+}
+
+void writeLine() {
+  for (int i = 0; i < N; i++) {
+    Serial.print(sensVal[i]);
+    Serial.print(" | ");
+  }
+  Serial.println();
+  delay(200);
+}
